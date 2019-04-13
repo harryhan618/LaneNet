@@ -57,9 +57,9 @@ For single image demo test:
 
 ```
 python demo_test.py -i demo/demo.jpg 
-					-w experiments/exp0/exp0_best.pth 
-					-dv 0.5
-					[--visualize / -v]
+                    -w experiments/exp0/exp0_best.pth 
+                    -dv 0.5
+                    [--visualize / -v]
 ```
 
 
