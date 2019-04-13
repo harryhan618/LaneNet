@@ -1,0 +1,23 @@
+{
+  "device": "cuda:0",
+  "MAX_ITER": 7000,
+
+  "dataset": {
+    "batch_size": 16
+  },
+
+  "net": {
+    "embed_dim": 7,
+    "delta_v": 0.5,
+    "delta_d": 3.0
+  },
+
+  "optim": {
+    "lr": 1e-2,
+    "momentum": 0.9,
+    "weight_decay": 1e-3,
+    "nesterov": true
+  }
+
+
+}

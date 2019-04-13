@@ -3,13 +3,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 
+
 class LaneNet(nn.Module):
-    def __init__(self, embed_dim=7, pretrained=False):
+    def __init__(self, embed_dim=7, pretrained=False, delta_v=.5, delta_d=3.):
         super(LaneNet, self).__init__()
         self.pretrained = pretrained
         self.embed_dim = embed_dim
-        self.delta_v = .5
-        self.delta_d = 3.
+        self.delta_v = delta_v
+        self.delta_d = delta_d
 
         self.net_init()
 
@@ -73,8 +74,14 @@ class LaneNet(nn.Module):
         embedding = self.embedding(x)
         binary_seg = self.binary_seg(x)
 
-        var_loss, dist_loss, reg_loss = self.discriminative_loss(embedding, segLabel)
-        seg_loss = self.seg_loss(binary_seg, torch.gt(segLabel, 0).type(torch.long))
+        if segLabel is not None:
+            var_loss, dist_loss, reg_loss = self.discriminative_loss(embedding, segLabel)
+            seg_loss = self.seg_loss(binary_seg, torch.gt(segLabel, 0).type(torch.long))
+        else:
+            var_loss = torch.tensor(0, dtype=img.dtype, device=img.device)
+            dist_loss = torch.tensor(0, dtype=img.dtype, device=img.device)
+            reg_loss = torch.tensor(0, dtype=img.dtype, device=img.device)
+            seg_loss = torch.tensor(0, dtype=img.dtype, device=img.device)
 
         loss = seg_loss * self.scale_seg + var_loss * self.scale_var + dist_loss * self.scale_dist + reg_loss * self.scale_reg
 
@@ -129,22 +136,8 @@ class LaneNet(nn.Module):
         reg_loss = reg_loss / batch_size
         return var_loss, dist_loss, reg_loss
 
-
-
-
-
-if __name__ == "__main__":
-    from dataset.CULane import CULane
-    from config import *
-    from utils.transforms import *
-
-    transform_train = Compose(Resize((800, 288)), Rotation(2), ToTensor(),
-                              Normalize(mean=(0.3598, 0.3653, 0.3662), std=(0.2573, 0.2663, 0.2756)))
-
-    dataset = CULane(CULane_path, "train", transform_train)
-    img = dataset[0]['img'].unsqueeze(0)
-    segLabel = dataset[0]['segLabel'].unsqueeze(0)
-
-    net = LaneNet()
-    o = net(img, segLabel)
-    print(o['loss'])
+net = LaneNet(7, False)
+x = torch.rand(2, 3, 288, 800)
+y = net(x)
+print(y['embedding'].shape)
+print(y['binary_seg'].shape)
