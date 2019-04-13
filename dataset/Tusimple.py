@@ -33,7 +33,6 @@ class Tusimple(Dataset):
     def createIndex(self):
         self.img_list = []
         self.segLabel_list = []
-        self.exist_list = []
 
         listfile = os.path.join(self.data_dir_path, "seg_label", "list", "{}_gt.txt".format(self.image_set))
         if not os.path.exists(listfile):
@@ -45,24 +44,20 @@ class Tusimple(Dataset):
                 l = line.split(" ")
                 self.img_list.append(os.path.join(self.data_dir_path, l[0][1:]))  # l[0][1:]  get rid of the first '/' so as for os.path.join
                 self.segLabel_list.append(os.path.join(self.data_dir_path, l[1][1:]))
-                self.exist_list.append([int(x) for x in l[2:]])
 
     def __getitem__(self, idx):
         img = cv2.imread(self.img_list[idx])
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if self.image_set != 'test':
             segLabel = cv2.imread(self.segLabel_list[idx])[:, :, 0]
-            exist = self.exist_list[idx]
         else:
             segLabel = None
-            exist = None
 
         if self.transforms is not None:
-            img, segLabel, exist = self.transforms(img, segLabel, exist)
+            img, segLabel = self.transforms(img, segLabel)
 
         sample = {'img': img,
                   'segLabel': segLabel,
-                  'exist': exist,
                   'img_name': self.img_list[idx]}
         return sample
 
@@ -181,17 +176,13 @@ class Tusimple(Dataset):
 
         if batch[0]['segLabel'] is None:
             segLabel = None
-            exist = None
         elif isinstance(batch[0]['segLabel'], torch.Tensor):
             segLabel = torch.stack([b['segLabel'] for b in batch])
-            exist = torch.stack([b['exist'] for b in batch])
         else:
             segLabel = [b['segLabel'] for b in batch]
-            exist = [b['exist'] for b in batch]
 
         samples = {'img': img,
                    'segLabel': segLabel,
-                   'exist': exist,
                    'img_name': [x['img_name'] for x in batch]}
 
         return samples
