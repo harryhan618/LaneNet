@@ -111,6 +111,8 @@ class LaneNet(nn.Module):
             labels = torch.unique(seg_gt_b)
             labels = labels[labels!=0]
             num_lanes = len(labels)
+            if num_lanes==0:
+                continue
 
             centroid_mean = []
             for lane_idx in labels:
@@ -135,9 +137,3 @@ class LaneNet(nn.Module):
         dist_loss = dist_loss / batch_size
         reg_loss = reg_loss / batch_size
         return var_loss, dist_loss, reg_loss
-
-net = LaneNet(7, False)
-x = torch.rand(2, 3, 288, 800)
-y = net(x)
-print(y['embedding'].shape)
-print(y['binary_seg'].shape)

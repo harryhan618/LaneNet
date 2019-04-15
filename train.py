@@ -17,7 +17,7 @@ from utils.lr_scheduler import PolyLR
 from utils.postprocess import embedding_post_process
 
 # ------------ config ------------
-exp_dir = "./experiments/exp1"
+exp_dir = "./experiments/exp0"
 
 with open(os.path.join(exp_dir, "cfg.json")) as f:
     exp_cfg = json.load(f)
