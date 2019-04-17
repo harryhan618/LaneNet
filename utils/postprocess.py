@@ -20,8 +20,10 @@ def embedding_post_process(embedding, bin_seg, delta_v):
 
     y_coords, x_coords = np.nonzero(bin_seg)
     embedding_reshaped = embedding[y_coords, x_coords]
-
     num_pixels = len(y_coords)
+    if num_pixels==0:
+        return cluster_result
+
     bandwidth = estimate_bandwidth(embedding_reshaped, quantile=0.2, n_samples=num_pixels//2)
     mean_shift = MeanShift(bandwidth=bandwidth, bin_seeding=False, n_jobs=-1)
     mean_shift.fit(embedding_reshaped)
@@ -31,11 +33,11 @@ def embedding_post_process(embedding, bin_seg, delta_v):
     unique_labels = sorted(unique_labels, key=lambda x:-np.sum(labels==x)) # sort according to occurrence
     cluster_centers = mean_shift.cluster_centers_
 
-    lane_idx = 0
+    lane_idx = 1
     for i in range(len(unique_labels)):
-        if lane_idx >= 4:         # only search for four lanes
+        if lane_idx > 4:         # only search for 4 lanes
             break
-        mask1 = np.linalg.norm(embedding_reshaped - cluster_centers[unique_labels[i]], ord=2, axis=1) < delta_v
+        mask1 = np.linalg.norm(embedding_reshaped - cluster_centers[unique_labels[i]], ord=2, axis=1) < 2*delta_v
         mask2 = (labels == unique_labels[i])
         if not np.any(mask1 & mask2):
             continue

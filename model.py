@@ -100,12 +100,12 @@ class LaneNet(nn.Module):
     def discriminative_loss(self, embedding, seg_gt):
         batch_size = embedding.shape[0]
 
-        var_loss = 0
-        dist_loss = 0
-        reg_loss = 0
+        var_loss = torch.tensor(0, dtype=embedding.dtype, device=embedding.device)
+        dist_loss = torch.tensor(0, dtype=embedding.dtype, device=embedding.device)
+        reg_loss = torch.tensor(0, dtype=embedding.dtype, device=embedding.device)
 
         for b in range(batch_size):
-            embedding_b = embedding[b]
+            embedding_b = embedding[b] # (embed_dim, H, W)
             seg_gt_b = seg_gt[b]
 
             labels = torch.unique(seg_gt_b)
@@ -116,20 +116,22 @@ class LaneNet(nn.Module):
 
             centroid_mean = []
             for lane_idx in labels:
-                seg_mask_i = seg_gt_b.eq(lane_idx)
-                embedding_i = embedding_b.masked_select(seg_mask_i).reshape(self.embed_dim, -1)
+                seg_mask_i = (seg_gt_b == lane_idx)
+                embedding_i = embedding_b[:, seg_mask_i]
 
                 mean_i = torch.mean(embedding_i, dim=1)
                 centroid_mean.append(mean_i)
 
                 # ---------- var_loss -------------
-                var_loss = var_loss + torch.mean( F.relu((torch.norm(embedding_i-mean_i.reshape(self.embed_dim,1), dim=0) - self.delta_v)) **2)
+                var_loss = var_loss + torch.mean( F.relu((torch.norm(embedding_i-mean_i.reshape(self.embed_dim,1), dim=0) - self.delta_v)) **2) / num_lanes
+            centroid_mean = torch.stack(centroid_mean)  # (n_lane, embed_dim)
 
-            centroid_mean = torch.stack(centroid_mean) # (n_lane, embed_dim)
-            centroid_mean1 = centroid_mean.reshape(-1, 1, self.embed_dim)
-            centroid_mean2 = centroid_mean.reshape(1, -1, self.embed_dim)
-            dist = torch.norm(centroid_mean1-centroid_mean2, dim=2)
-            dist_loss = dist_loss + torch.sum(F.relu(dist - self.delta_d)**2) / (num_lanes * (num_lanes-1))
+            if num_lanes > 1:
+                centroid_mean1 = centroid_mean.reshape(-1, 1, self.embed_dim)
+                centroid_mean2 = centroid_mean.reshape(1, -1, self.embed_dim)
+                dist = torch.norm(centroid_mean1-centroid_mean2, dim=2)
+                # divided by two for double calculated loss above, for implementation convenience
+                dist_loss = dist_loss + torch.sum(F.relu(dist - self.delta_d)**2) / (num_lanes * (num_lanes-1)) / 2
 
             reg_loss = reg_loss + torch.mean(torch.norm(centroid_mean, dim=1))
 

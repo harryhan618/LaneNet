@@ -161,14 +161,17 @@ def val(epoch):
                     img = cv2.resize(img, (800, 288))
 
                     bin_seg_img = np.zeros_like(img)
-                    bin_seg_img[bin_seg_pred[b]] = [0, 0, 255]
+                    bin_seg_img[bin_seg_pred[b]==1] = [0, 0, 255]
 
-                    seg_img = np.zeros_like(img)
-                    embedding_b = np.transpose(embedding[b], (1, 2, 0))
-                    lane_seg_img = embedding_post_process(embedding_b, bin_seg_pred[b], exp_cfg['net']['delta_v'])
-                    for i, lane_idx in enumerate(np.unique(lane_seg_img)):
-                        seg_img[lane_seg_img==lane_idx] = color[i]
-                    img = cv2.addWeighted(src1=seg_img, alpha=0.8, src2=img, beta=1., gamma=0.)
+                    # # ----------- cluster ---------------
+                    # seg_img = np.zeros_like(img)
+                    # embedding_b = np.transpose(embedding[b], (1, 2, 0))
+                    # lane_seg_img = embedding_post_process(embedding_b, bin_seg_pred[b], exp_cfg['net']['delta_v'])
+                    # embed_unique_idxs = np.unique(lane_seg_img)
+                    # embed_unique_idxs = embed_unique_idxs[embed_unique_idxs!=0]
+                    # for i, lane_idx in enumerate(embed_unique_idxs):
+                    #     seg_img[lane_seg_img==lane_idx] = color[i]
+                    # img = cv2.addWeighted(src1=seg_img, alpha=0.8, src2=img, beta=1., gamma=0.)
 
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     bin_seg_img = cv2.cvtColor(bin_seg_img, cv2.COLOR_BGR2RGB)

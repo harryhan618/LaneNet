@@ -6,7 +6,7 @@ LaneNet is a segmentation-tasked lane detection algorithm, described in [1] "[To
 
 ### To DO List
 
-- [ ] Refine Post-process script
+- [x] Refine Post-process script
 - [ ] Provide a trained model
 - [ ] Script for test and evaluation
 
