@@ -7,8 +7,8 @@ LaneNet is a segmentation-tasked lane detection algorithm, described in [1] "[To
 ### To DO List
 
 - [x] Refine Post-process script
-- [ ] Provide a trained model
-- [ ] Script for test and evaluation
+- [x] Provide a trained model
+- [x] Script for test and evaluation
 
 
 
@@ -62,7 +62,7 @@ python demo_test.py -i demo/demo.jpg
                     [--visualize / -v]
 ```
 
-
+An untested model can be downloaded [here](https://drive.google.com/file/d/1o-L4xGSO0FG-EP1kQKmu6YyQ4Ao9kSpn/view?usp=sharing).
 
 
 
