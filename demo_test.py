@@ -35,7 +35,7 @@ def main():
     net.load_state_dict(save_dict['net'])
     net.eval()
 
-    output = net(img)
+    output = net(x)
     embedding = output['embedding']
     embedding = embedding.detach().cpu().numpy()
     embedding = np.transpose(embedding[0], (1, 2, 0))
