@@ -5,7 +5,7 @@ import torchvision.models as models
 
 
 class LaneNet(nn.Module):
-    def __init__(self, embed_dim=7, pretrained=False, delta_v=.5, delta_d=3.):
+    def __init__(self, embed_dim=4, pretrained=False, delta_v=0.5, delta_d=3.0):
         super(LaneNet, self).__init__()
         self.pretrained = pretrained
         self.embed_dim = embed_dim
@@ -117,23 +117,27 @@ class LaneNet(nn.Module):
             centroid_mean = []
             for lane_idx in labels:
                 seg_mask_i = (seg_gt_b == lane_idx)
+                if not seg_mask_i.any():
+                    continue
                 embedding_i = embedding_b[:, seg_mask_i]
 
                 mean_i = torch.mean(embedding_i, dim=1)
                 centroid_mean.append(mean_i)
 
                 # ---------- var_loss -------------
-                var_loss = var_loss + torch.mean( F.relu((torch.norm(embedding_i-mean_i.reshape(self.embed_dim,1), dim=0) - self.delta_v)) **2) / num_lanes
+                var_loss = var_loss + torch.mean( F.relu(torch.norm(embedding_i-mean_i.reshape(self.embed_dim,1), dim=0) - self.delta_v)**2 ) / num_lanes
             centroid_mean = torch.stack(centroid_mean)  # (n_lane, embed_dim)
 
             if num_lanes > 1:
                 centroid_mean1 = centroid_mean.reshape(-1, 1, self.embed_dim)
                 centroid_mean2 = centroid_mean.reshape(1, -1, self.embed_dim)
                 dist = torch.norm(centroid_mean1-centroid_mean2, dim=2)
-                # divided by two for double calculated loss above, for implementation convenience
-                dist_loss = dist_loss + torch.sum(F.relu(dist - self.delta_d)**2) / (num_lanes * (num_lanes-1)) / 2
 
-            reg_loss = reg_loss + torch.mean(torch.norm(centroid_mean, dim=1))
+                # divided by two for double calculated loss above, for implementation convenience
+                dist_loss = dist_loss + torch.sum(F.relu(-dist + self.delta_d)**2) / (num_lanes * (num_lanes-1)) / 2
+
+            # reg_loss is not used in original paper
+            # reg_loss = reg_loss + torch.mean(torch.norm(centroid_mean, dim=1))
 
         var_loss = var_loss / batch_size
         dist_loss = dist_loss / batch_size
