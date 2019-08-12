@@ -131,7 +131,8 @@ class LaneNet(nn.Module):
             if num_lanes > 1:
                 centroid_mean1 = centroid_mean.reshape(-1, 1, self.embed_dim)
                 centroid_mean2 = centroid_mean.reshape(1, -1, self.embed_dim)
-                dist = torch.norm(centroid_mean1-centroid_mean2, dim=2)
+                dist = torch.norm(centroid_mean1-centroid_mean2, dim=2) # (num_lanes, num_lanes)
+                dist = dist + torch.ones_like(dist) * self.delta_d # diagonal elements are 0, now mask above delta_d
 
                 # divided by two for double calculated loss above, for implementation convenience
                 dist_loss = dist_loss + torch.sum(F.relu(-dist + self.delta_d)**2) / (num_lanes * (num_lanes-1)) / 2
