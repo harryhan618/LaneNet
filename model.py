@@ -5,7 +5,7 @@ import torchvision.models as models
 
 
 class LaneNet(nn.Module):
-    def __init__(self, embed_dim=4, pretrained=False, delta_v=0.5, delta_d=3.0):
+    def __init__(self, embed_dim=4, delta_v=0.5, delta_d=3.0, pretrained=False):
         super(LaneNet, self).__init__()
         self.pretrained = pretrained
         self.embed_dim = embed_dim

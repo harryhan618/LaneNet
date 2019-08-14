@@ -3,10 +3,12 @@
   "MAX_ITER": 7000,
 
   "dataset": {
-    "batch_size": 16
+    "dataset_name": "Tusimple",
+    "batch_size": 32,
+    "resize_shape": [512, 288]
   },
 
-  "net": {
+  "model": {
     "embed_dim": 7,
     "delta_v": 0.5,
     "delta_d": 3.0
@@ -17,7 +19,11 @@
     "momentum": 0.9,
     "weight_decay": 1e-3,
     "nesterov": true
+  },
+
+  "lr_scheduler": {
+    "warmup": 20,
+    "max_iter": 1500,
+    "min_lrs": 1e-10
   }
-
-
 }

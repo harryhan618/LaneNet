@@ -48,12 +48,12 @@ class CULane(Dataset):
         else:
             segLabel = None
 
-        if self.transforms is not None:
-            img, segLabel = self.transforms(img, segLabel)
-
         sample = {'img': img,
                   'segLabel': segLabel,
                   'img_name': self.img_list[idx]}
+
+        if self.transforms is not None:
+            sample = self.transforms(sample)
         return sample
 
     def __len__(self):

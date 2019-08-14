@@ -9,36 +9,55 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from config import *
-from dataset.CULane import CULane
+import dataset
 from model import LaneNet
 from utils.tensorboard import TensorBoard
 from utils.transforms import *
 from utils.lr_scheduler import PolyLR
 from utils.postprocess import embedding_post_process
 
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--exp_dir", type=str, default="./experiments/exp0")
+    parser.add_argument("--resume", "-r", action="store_true")
+    args = parser.parse_args()
+    return args
+args = parse_args()
+
 # ------------ config ------------
-exp_dir = "./experiments/exp0"
+exp_dir = args.exp_dir
+exp_name = exp_dir.split['/'][-1]
 
 with open(os.path.join(exp_dir, "cfg.json")) as f:
     exp_cfg = json.load(f)
+resize_shape = tuple(exp_cfg['dataset']['resize_shape'])
 
 device = torch.device(exp_cfg['device'])
 tensorboard = TensorBoard(exp_dir)
 
 # ------------ train data ------------
-transform_train = Compose(Resize((800, 288)), Rotation(2), ToTensor(),
-                          Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])) # imagenet mean, std
-train_dataset = CULane(CULane_path, "train", transform_train)
+# # CULane mean, std
+# mean=(0.3598, 0.3653, 0.3662)
+# std=(0.2573, 0.2663, 0.2756)
+# Imagenet mean, std
+mean=(0.485, 0.456, 0.406)
+std=(0.229, 0.224, 0.225)
+transform_train = Compose(Resize(resize_shape), Darkness(5), Rotation(2),
+                          ToTensor(), Normalize(mean=mean, std=std))
+dataset_name = exp_cfg['dataset'].pop('dataset_name')
+Dataset_Type = getattr(dataset, dataset_name)
+train_dataset = Dataset_Type(Dataset_Path[dataset_name], "train", transform_train)
 train_loader = DataLoader(train_dataset, **exp_cfg['dataset'], shuffle=True, collate_fn=train_dataset.collate, num_workers=8)
 
 # ------------ val data ------------
-transform_val = Compose(Resize((800, 288)), ToTensor(),
-                        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]))
-val_dataset = CULane(CULane_path, "val", transform_val)
-val_loader = DataLoader(val_dataset, batch_size=8, collate_fn=train_dataset.collate, num_workers=4)
+transform_val = Compose(Resize(resize_shape), ToTensor(),
+                        Normalize(mean=mean, std=std))
+val_dataset = Dataset_Type(Dataset_Path[dataset_name], "val", transform_val)
+val_loader = DataLoader(val_dataset, batch_size=8, collate_fn=val_dataset.collate, num_workers=4)
 
 # ------------ preparation ------------
-net = LaneNet(pretrained=True, **exp_cfg['net'])
+net = LaneNet(pretrained=True, **exp_cfg['model'])
 net = net.to(device)
 net = torch.nn.DataParallel(net)
 
@@ -80,9 +99,9 @@ def train(epoch):
 
         loss.backward()
         optimizer.step()
-        if batch_idx % 5 == 4:
-            lr_scheduler.step()
+        lr_scheduler.step()
 
+        iter_idx = epoch * len(train_loader) + batch_idx
         train_loss += loss.item()
         train_loss_bin_seg += seg_loss.item()
         train_loss_var += var_loss.item()
@@ -91,12 +110,14 @@ def train(epoch):
         progressbar.set_description("batch loss: {:.3f}".format(loss.item()))
         progressbar.update(1)
 
+        lr = optimizer.param_groups[0]['lr']
+        tensorboard.scalar_summary("train_loss", train_loss, epoch)
+        tensorboard.scalar_summary("train_loss_bin_seg", train_loss_bin_seg, epoch)
+        tensorboard.scalar_summary("train_loss_var", train_loss_var, epoch)
+        tensorboard.scalar_summary("train_loss_dist", train_loss_dist, epoch)
+        tensorboard.scalar_summary("train_loss_reg", train_loss_reg, epoch)
+
     progressbar.close()
-    tensorboard.scalar_summary("train_loss", train_loss, epoch)
-    tensorboard.scalar_summary("train_loss_bin_seg", train_loss_bin_seg, epoch)
-    tensorboard.scalar_summary("train_loss_var", train_loss_var, epoch)
-    tensorboard.scalar_summary("train_loss_dist", train_loss_dist, epoch)
-    tensorboard.scalar_summary("train_loss_reg", train_loss_reg, epoch)
     tensorboard.writer.flush()
 
     if epoch % 1 == 0:
@@ -206,15 +227,8 @@ def val(epoch):
         shutil.copyfile(save_name, copy_name)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--resume", "-r", action="store_true")
-    args = parser.parse_args()
-    return args
-
-
 def main():
-    args = parse_args()
+    global best_val_loss
     if args.resume:
         save_dict = torch.load(os.path.join(exp_dir, exp_dir.split('/')[-1] + '.pth'))
         if isinstance(net, torch.nn.DataParallel):
@@ -224,6 +238,7 @@ def main():
         optimizer.load_state_dict(save_dict['optim'])
         lr_scheduler.load_state_dict(save_dict['lr_scheduler'])
         start_epoch = save_dict['epoch'] + 1
+        best_val_loss = save_dict.get("best_val_loss", 1e6)
     else:
         start_epoch = 0
 
