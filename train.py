@@ -48,7 +48,7 @@ transform_train = Compose(Resize(resize_shape), Darkness(5), Rotation(2),
 dataset_name = exp_cfg['dataset'].pop('dataset_name')
 Dataset_Type = getattr(dataset, dataset_name)
 train_dataset = Dataset_Type(Dataset_Path[dataset_name], "train", transform_train)
-train_loader = DataLoader(train_dataset, **exp_cfg['dataset'], shuffle=True, collate_fn=train_dataset.collate, num_workers=8)
+train_loader = DataLoader(train_dataset, batch_size=exp_cfg['dataset']['batch_size'], shuffle=True, collate_fn=train_dataset.collate, num_workers=8)
 
 # ------------ val data ------------
 transform_val = Compose(Resize(resize_shape), ToTensor(),
