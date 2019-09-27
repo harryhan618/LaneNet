@@ -28,11 +28,11 @@ def main():
 
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # RGB for net model input
-    x = transform(img)[0]
+    x = transform({'img': img})[0]
     x.unsqueeze_(0)
 
-    save_dict = torch.load(weight_path, map_location='cpu')
-    net.load_state_dict(save_dict['net'])
+    # save_dict = torch.load(weight_path, map_location='cpu')
+    # net.load_state_dict(save_dict['net'])
     net.eval()
 
     output = net(x)
@@ -47,6 +47,8 @@ def main():
     lane_seg_img = embedding_post_process(embedding, bin_seg_pred, args.delta_v)
     color = np.array([[255, 125, 0], [0, 255, 0], [0, 0, 255], [0, 255, 255]], dtype='uint8')
     for i, lane_idx in enumerate(np.unique(lane_seg_img)):
+        print(seg_img.shape)
+        print((lane_seg_img == lane_idx).shape)
         seg_img[lane_seg_img == lane_idx] = color[i]
 
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
