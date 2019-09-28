@@ -3,7 +3,7 @@
 LaneNet is a segmentation-tasked lane detection algorithm, described in [1] "[Towards end-to-end lane detection: an instance segmentation approach](https://arxiv.org/pdf/1802.05591.pdf)" . The key idea of instance segmentation should be referred to [2] "[Semantic instance segmentation with a discriminative loss function](https://arxiv.org/pdf/1708.02551.pdf)". This repository contains a re-implementation in Pytorch.
 
 ### News
-- Codebase would be updated these days. There are many bugs currently in this repo. Sorry for the late respones. 
+- Codebase would be updated these days. There are many bugs currently in this repo. Sorry for the late response. 
 
 ### To DO List
 
