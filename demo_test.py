@@ -28,7 +28,7 @@ def main():
 
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # RGB for net model input
-    x = transform({'img': img})[0]
+    x = transform({'img': img})['img']
     x.unsqueeze_(0)
 
     # save_dict = torch.load(weight_path, map_location='cpu')
