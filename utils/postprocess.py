@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 
 
-def embedding_post_process(embedding, bin_seg, delta_v):
+def embedding_post_process(embedding, bin_seg, band_width=1.5, max_num_lane=4):
     """
     First use mean shift to find dense cluster center.
 
@@ -18,33 +18,20 @@ def embedding_post_process(embedding, bin_seg, delta_v):
     """
     cluster_result = np.zeros(bin_seg.shape, dtype=np.int32)
 
-    y_coords, x_coords = np.nonzero(bin_seg)
-    embedding_reshaped = embedding[y_coords, x_coords]
-    num_pixels = len(y_coords)
-    if num_pixels==0:
+    cluster_list = embedding[bin_seg>0]
+    if len(cluster_list)==0:
         return cluster_result
 
-    bandwidth = estimate_bandwidth(embedding_reshaped, quantile=0.2, n_samples=num_pixels//2)
-    mean_shift = MeanShift(bandwidth=bandwidth, bin_seeding=False, n_jobs=-1)
-    mean_shift.fit(embedding_reshaped)
+    mean_shift = MeanShift(bandwidth=1.5, bin_seeding=True)
+    mean_shift.fit(cluster_list)
 
     labels = mean_shift.labels_
-    unique_labels = np.unique(labels)
-    unique_labels = sorted(unique_labels, key=lambda x:-np.sum(labels==x)) # sort according to occurrence
-    cluster_centers = mean_shift.cluster_centers_
+    cluster_result[bin_seg>0] = labels + 1
 
-    lane_idx = 1
-    for i in range(len(unique_labels)):
-        if lane_idx > 4:         # only search for 4 lanes
-            break
-        mask1 = np.linalg.norm(embedding_reshaped - cluster_centers[unique_labels[i]], ord=2, axis=1) < 2*delta_v
-        mask2 = (labels == unique_labels[i])
-        if not np.any(mask1 & mask2):
-            continue
-        y_i = y_coords[mask1 & mask2]
-        x_i = x_coords[mask1 & mask2]
-        cluster_result[y_i, x_i] = lane_idx
-        lane_idx += 1
+    cluster_result[cluster_result > max_num_lane] = 0
+    for idx in np.unique(cluster_result):
+        if len(cluster_result[cluster_result==idx]) < 15:
+            cluster_result[cluster_result==idx] = 0
 
     return cluster_result
 
