@@ -121,6 +121,7 @@ class LaneNet(nn.Module):
             labels = labels[labels!=0]
             num_lanes = len(labels)
             if num_lanes==0:
+                # please refer to issue here: https://github.com/harryhan618/LaneNet/issues/12
                 _nonsense = embedding.sum()
                 _zero = torch.zeros_like(_nonsense)
                 var_loss = var_loss + _nonsense * _zero

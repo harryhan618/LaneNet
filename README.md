@@ -5,12 +5,6 @@ LaneNet is a segmentation-tasked lane detection algorithm, described in [1] "[To
 ### News
 - Codebase would be updated these days. There are many bugs currently in this repo. Sorry for the late response. 
 
-### To DO List
-
-- [x] Refine Post-process script
-- [x] Provide a trained model
-- [x] Script for test and evaluation
-
 
 
 ## Data preparation
@@ -56,14 +50,15 @@ Tusimple_path
 
 For single image demo test:
 
-```
+```Bash
 python demo_test.py -i demo/demo.jpg 
-                    -w experiments/exp0/exp0_best.pth 
-                    -dv 0.5
+                    -w path/to/weight
+                    -b 1.5
                     [--visualize / -v]
 ```
 
-An untested model can be downloaded [here](https://drive.google.com/file/d/1o-L4xGSO0FG-EP1kQKmu6YyQ4Ao9kSpn/view?usp=sharing).
+An untested model can be downloaded [here].  (It will be uploaded soon.)
+![](demo/demo_result.jpg "demo_result")
 
 
 
