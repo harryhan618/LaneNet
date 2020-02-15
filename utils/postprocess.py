@@ -22,7 +22,7 @@ def embedding_post_process(embedding, bin_seg, band_width=1.5, max_num_lane=4):
     if len(cluster_list)==0:
         return cluster_result
 
-    mean_shift = MeanShift(bandwidth=1.5, bin_seeding=True)
+    mean_shift = MeanShift(bandwidth=1.5, bin_seeding=True, n_jobs=-1)
     mean_shift.fit(cluster_list)
 
     labels = mean_shift.labels_
@@ -34,14 +34,3 @@ def embedding_post_process(embedding, bin_seg, band_width=1.5, max_num_lane=4):
             cluster_result[cluster_result==idx] = 0
 
     return cluster_result
-
-
-
-if __name__=="__main__":
-    from sklearn.datasets.samples_generator import make_blobs
-    centers = [[1, 1, 1, 4], [-1, -1, 0, 3], [1, -1, 1, 3]]
-    X, _ = make_blobs(n_samples=20*20, centers=centers, cluster_std=0.6)
-    X = X.reshape((20, 20, -1))
-    bin_seg = np.random.rand(20,20)
-
-    embedding_post_process(X, bin_seg, .3)
